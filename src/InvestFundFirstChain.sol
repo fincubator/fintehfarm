@@ -24,10 +24,17 @@ interface IXTokens {
 /// @dev This contract allows users to deposit funds, invest them via XCM, and later withdraw funds.
 contract InvestFundFirstChain {
     IERC20 public immutable token;
+    IXTokens public immutable xTokens;
     address public owner;
 
     uint256 public totalShares;
     mapping(address => uint256) public shares;
+    
+    // Destination multilocation of second parachain (in SCALE codec format)
+    bytes public constant DESTINATION_MULTILOCATION = hex"010100000004000000";
+    
+    // Estimated weight for XCM message execution on the destination chain
+    uint64 public constant XCM_WEIGHT = 500_000_000;
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Not owner");
@@ -82,17 +89,28 @@ contract InvestFundFirstChain {
 
     /// @notice Request a withdrawal by submitting the amount of shares to be withdrawn
     /// @param shareAmount The number of shares to be withdrawn
-    /// @dev This method locks the withdrawal request, which needs to be fulfilled by the contract owner
+    /// @dev Sends an XCM message to the second chain to return corresponding tokens
     function requestWithdraw(uint256 shareAmount) external {
         require(shareAmount > 0, "Invalid share amount");
         require(shares[msg.sender] >= shareAmount, "Not enough shares");
         require(!withdrawalRequests[msg.sender].pending, "Already pending");
 
-        // Lock the withdrawal request
+        uint256 pool = token.balanceOf(address(this));
+        uint256 amountToWithdraw = (shareAmount * pool) / totalShares;
+
+        // Store withdrawal request
         withdrawalRequests[msg.sender] = WithdrawalRequest({
             shares: shareAmount,
             pending: true
         });
+
+        // Send XCM transfer request to the second parachain
+        xTokens.transfer(
+            address(token),
+            amountToWithdraw,
+            DESTINATION_MULTILOCATION,
+            XCM_WEIGHT
+        );
     }
 
     /// @notice Fulfills a withdrawal request by transferring the calculated amount back to the investor
