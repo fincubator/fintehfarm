@@ -5,13 +5,12 @@ import {IVault} from "./interfaces/IVault.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {BaseVault} from "./BaseVault.sol";
 
 /**
  * @title IndexFund
  * @notice A simplified index fund managing investments in multiple lending pools.
  */
-contract IndexFund is BaseVault {
+contract RebalancingFund {
     using SafeERC20 for IERC20Metadata;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -33,7 +32,6 @@ contract IndexFund is BaseVault {
     address public feeRecipient;
 
     constructor(IERC20Metadata _asset, address _feeRecipient, uint256 _depositFeeBps)
-        BaseVault(_asset)
     {
         require(_depositFeeBps <= 10_000, "Fee too high");
         feeRecipient = _feeRecipient;
@@ -43,7 +41,6 @@ contract IndexFund is BaseVault {
 
     function initialize(address admin, string memory name, string memory symbol) public initializer {
         __ERC20_init(name, symbol);
-        __BaseVault_init(admin);
     }
 
 
