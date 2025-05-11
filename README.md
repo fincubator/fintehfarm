@@ -1,5 +1,5 @@
 # fintehfarm
-a multi-chain yield aggregator that uses investment pools
+First bridgeless multi-chain yield farming aggregator that uses investment pools
 
 Mockup-version with the emulated DeFi for Hackathon goals
 
